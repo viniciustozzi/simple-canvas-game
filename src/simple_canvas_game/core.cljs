@@ -11,55 +11,66 @@
 (defn setup [state]
   (reset! game-state state))
 
-(defn draw []
+(defn draw [state]
   (let [canvas (.getElementById js/document "game-canvas")
         context (.getContext canvas "2d")
-        pos (:pos @game-state)]
+        pos (:pos state)]
     (.clearRect context 0 0 SCREEN-WIDTH SCREEN-HEIGHT)
     (set! (.-fillStyle context) "green")
     (.fillRect context pos 10 150 150)))
 
-(defn on-key-down [key]
-  (let [key-code (.-code key)
-        arrow-down (-> @game-state :input :arrow-down)
-        arrow-up (-> @game-state :input :arrow-up)]
-    (case (key-code)
-      "ArrowDown" ;;TODO Save value in game-state
-      "ArrowUp" ;;TODO Save value in game-state
-      )))
+(defn on-key-down [event]
+  (case (.-code event)
+    "ArrowDown" (swap! game-state assoc-in [:input :arrow-down] true)
+    "ArrowUp" (swap! game-state assoc-in [:input :arrow-up] true)
+    false))
 
-(defn on-key-up [key])
+(defn on-key-up [event]
+  (case (.-code event)
+    "ArrowDown" (swap! game-state assoc-in [:input :arrow-down] false)
+    "ArrowUp" (swap! game-state assoc-in [:input :arrow-up] false)))
 
 (defn observe-key-events []
   (.addEventListener js/document "keydown" on-key-down false)
   (.addEventListener js/document "keyup" on-key-up false))
 
+(defn input->state [state]
+  (let [arrow-down (-> state :input :arrow-down)
+        arrow-up (-> state :input :arrow-up)]
+    (-> state
+        (assoc-in [:paddle1 :dirY] (cond
+                                     (and arrow-down arrow-up) 0
+                                     arrow-up 1
+                                     arrow-down -1
+                                     :else 0)))))
+
+(defn update-game [state]
+  (swap! game-state #(input->state state)))
+
 (defn run-game []
-  ;;Initial state of the game
-  (setup {:player {:pos {:x 10 :y 10}
-                   :size {:w 50 :h 50}}
+  (setup {:paddle1 {:pos {:x 10 :y 10}
+                    :dirY 0}
+          :paddle2 {:pos {:x 10 :y 10}
+                    :dirY 0}
+          :ball {:pos {:x (/ SCREEN-WIDTH 2) :y (/ SCREEN-HEIGHT 2)}}
           :input {:arrow-up false
                   :arrow-down false}})
 
-  ;observe and store inputs (outside setInterval)
   (observe-key-events)
 
-  ;;update game-state (inside setInterval)
-
-  ;;Draw the current state of the game
-  (js/setInterval draw 10))
-
-(defn update-state []
-  (reset! game-state {:pos (inc (:pos @game-state))})
-  (draw))
+  (js/setInterval (fn []
+                    (-> @game-state
+                        (update-game)
+                        (draw)) 10)))
 
 (defn home-page []
   [:div
    [:div
-    [:button {:on-click run-game} "Start Game"]
-    [:button {:on-click update-state} "Update"]]
+    [:button {:on-click run-game} "Start Game"]]
    [:div
-    [:canvas#game-canvas {:width SCREEN-WIDTH :height SCREEN-HEIGHT}]]])
+    [:canvas#game-canvas {:width SCREEN-WIDTH :height SCREEN-HEIGHT}]]
+   [:div
+    [:h4 (str @game-state)]]])
 
 (defn mount-root []
   (d/render [home-page] (.getElementById js/document "app")))
