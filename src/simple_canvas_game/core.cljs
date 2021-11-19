@@ -5,6 +5,7 @@
 
 (def SCREEN-WIDTH 500)
 (def SCREEN-HEIGHT 500)
+(def PADDLE-SPEED 0.1)
 
 (def game-state (r/atom {}))
 
@@ -13,11 +14,10 @@
 
 (defn draw [state]
   (let [canvas (.getElementById js/document "game-canvas")
-        context (.getContext canvas "2d")
-        pos (:pos state)]
+        context (.getContext canvas "2d")]
     (.clearRect context 0 0 SCREEN-WIDTH SCREEN-HEIGHT)
-    (set! (.-fillStyle context) "green")
-    (.fillRect context pos 10 150 150)))
+    (set! (.-fillStyle context) "black")
+    (.fillRect context (-> state :paddle1 :pos :x) (-> state :paddle1 :pos :y) 20 150)))
 
 (defn on-key-down [event]
   (case (.-code event)
@@ -44,11 +44,18 @@
                                      arrow-down -1
                                      :else 0)))))
 
+(defn update-paddle [state]
+  (let [dir1 (-> state :paddle1 :dirY)
+        posY (-> state :paddle1 :pos :y)]
+    (assoc-in state [:paddle1 :pos :y] (+ PADDLE-SPEED posY))))
+
 (defn update-game [state]
-  (swap! game-state #(input->state state)))
+  (swap! game-state #(-> state
+                         input->state
+                         update-paddle)))
 
 (defn run-game []
-  (setup {:paddle1 {:pos {:x 10 :y 10}
+  (setup {:paddle1 {:pos {:x 10 :y 50}
                     :dirY 0}
           :paddle2 {:pos {:x 10 :y 10}
                     :dirY 0}
