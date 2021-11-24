@@ -10,12 +10,15 @@
 (def PADDLE-WIDTH 20)
 (def PADDLE-HEIGHT 80)
 
+(def BALL-SPEED 0.5)
+
 (def game-state (r/atom
                  {:paddle1 {:pos {:x 10 :y 100}
                             :dirY 0}
                   :paddle2 {:pos {:x (- SCREEN-WIDTH 20) :y 100}
                             :dirY 0}
                   :ball {:pos {:x (/ SCREEN-WIDTH 2) :y (/ SCREEN-HEIGHT 2)}
+                         :dir {:x 1 :y 1}
                          :size 5}
                   :input {:arrow-up false
                           :arrow-down false}}))
@@ -76,10 +79,25 @@
         (assoc-in [:paddle1 :pos :y] (new-paddle-pos posY dir))
         (assoc-in [:paddle2 :pos :y] (new-paddle-pos posY dir)))))
 
+(defn update-ball [state]
+  (let [posX (-> state :ball :pos :x)
+        posY (-> state :ball :pos :y)
+        dirX (-> state :ball :dir :x)
+        dirY (-> state :ball :dir :y)
+        new-posX (+ posX (* BALL-SPEED dirX))
+        new-posY (+ posY (* BALL-SPEED dirY))]
+    (-> state
+        (assoc-in [:ball :pos :x] new-posX)
+        (assoc-in [:ball :pos :y] new-posY)
+        (assoc-in [:ball :dir :y] (if (and (< 0 new-posY) (> SCREEN-HEIGHT new-posY))
+                                    dirY
+                                    (* -1 dirY))))))
+
 (defn update-game [state]
   (swap! game-state #(-> state
                          input->state
-                         update-paddle)))
+                         update-paddle
+                         update-ball)))
 
 (defn run-game []
   (listen-for-key-events)
