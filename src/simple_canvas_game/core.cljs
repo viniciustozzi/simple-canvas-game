@@ -79,6 +79,9 @@
         (assoc-in [:paddle1 :pos :y] (new-paddle-pos posY dir))
         (assoc-in [:paddle2 :pos :y] (new-paddle-pos posY dir)))))
 
+(defn collide-with-paddles? [ball paddle1 paddle2]
+  true)
+
 (defn update-ball [state]
   (let [posX (-> state :ball :pos :x)
         posY (-> state :ball :pos :y)
@@ -91,7 +94,10 @@
         (assoc-in [:ball :pos :y] new-posY)
         (assoc-in [:ball :dir :y] (if (and (< 0 new-posY) (> SCREEN-HEIGHT new-posY))
                                     dirY
-                                    (* -1 dirY))))))
+                                    (* -1 dirY)))
+        (assoc-in [:ball :dir :x] (if (collide-with-paddles? (-> state :ball) (-> state :paddle1) (-> state :paddle2))
+                                    (* -1 dirX)
+                                    dirX)))))
 
 (defn update-game [state]
   (swap! game-state #(-> state
