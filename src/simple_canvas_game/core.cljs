@@ -2,7 +2,6 @@
   (:require
    [reagent.core :as r]
    [reagent.dom :as d]))
-
 (def SCREEN-WIDTH 500)
 (def SCREEN-HEIGHT 300)
 
@@ -79,8 +78,10 @@
         (assoc-in [:paddle1 :pos :y] (new-paddle-pos posY dir))
         (assoc-in [:paddle2 :pos :y] (new-paddle-pos posY dir)))))
 
-(defn collide-with-paddles? [ball paddle1 paddle2]
-  true)
+(defn collide-with-paddles? [{:keys} paddle1 paddle2]
+  (let [{:keys [pos]} ball
+        {}]
+    true))
 
 (defn update-ball [state]
   (let [posX (-> state :ball :pos :x)
