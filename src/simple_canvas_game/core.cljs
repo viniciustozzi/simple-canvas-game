@@ -12,25 +12,29 @@
 (def BALL-SPEED 0.5)
 
 (def game-state (r/atom
-                 {:paddle1 {:pos {:x 10 :y 100}
+                 {:paddle1 {:x 10
+                            :y 100
                             :dirY 0}
-                  :paddle2 {:pos {:x (- SCREEN-WIDTH 20) :y 100}
+                  :paddle2 {:x (- SCREEN-WIDTH 20)
+                            :y 100
                             :dirY 0}
-                  :ball {:pos {:x (/ SCREEN-WIDTH 2) :y (/ SCREEN-HEIGHT 2)}
-                         :dir {:x 1 :y 1}
+                  :ball {:x (/ SCREEN-WIDTH 2)
+                         :y (/ SCREEN-HEIGHT 2)
+                         :dirX 1
+                         :dirY 1
                          :size 5}
                   :input {:arrow-up false
                           :arrow-down false}}))
 
 (defn draw-paddles [state context]
   (set! (.-fillStyle context) "black")
-  (.fillRect context (-> state :paddle1 :pos :x) (-> state :paddle1 :pos :y) PADDLE-WIDTH PADDLE-HEIGHT)
-  (.fillRect context (-> state :paddle2 :pos :x) (-> state :paddle2 :pos :y) PADDLE-WIDTH PADDLE-HEIGHT))
+  (.fillRect context (-> state :paddle1 :x) (-> state :paddle1 :y) PADDLE-WIDTH PADDLE-HEIGHT)
+  (.fillRect context (-> state :paddle2 :x) (-> state :paddle2 :y) PADDLE-WIDTH PADDLE-HEIGHT))
 
 (defn draw-ball [state context]
   (set! (.-fillStyle context) "black")
   (.beginPath context)
-  (.arc context (-> state :ball :pos :x) (-> state :ball :pos :y) (-> state :ball :size) 0 (* 2 3.14))
+  (.arc context (-> state :ball :posX) (-> state :ball :posY) (-> state :ball :size) 0 (* 2 3.14))
   (.stroke context))
 
 (defn draw [state]
@@ -73,32 +77,30 @@
 
 (defn update-paddle [state]
   (let [dir (-> state :paddle1 :dirY)
-        posY (-> state :paddle1 :pos :y)]
+        posY (-> state :paddle1 :y)]
     (-> state
-        (assoc-in [:paddle1 :pos :y] (new-paddle-pos posY dir))
-        (assoc-in [:paddle2 :pos :y] (new-paddle-pos posY dir)))))
+        (assoc-in [:paddle1 :y] (new-paddle-pos posY dir))
+        (assoc-in [:paddle2 :y] (new-paddle-pos posY dir)))))
 
-(defn collide-with-paddles? [{:keys} paddle1 paddle2]
-  (let [{:keys [pos]} ball
-        {}]
-    true))
+(defn collide-with-paddles? [ball paddle1 paddle2]
+  true)
 
 (defn update-ball [state]
-  (let [posX (-> state :ball :pos :x)
-        posY (-> state :ball :pos :y)
-        dirX (-> state :ball :dir :x)
-        dirY (-> state :ball :dir :y)
+  (let [posX (-> state :ball :posX)
+        posY (-> state :ball :posY)
+        dirX (-> state :ball :dirX)
+        dirY (-> state :ball :dirY)
         new-posX (+ posX (* BALL-SPEED dirX))
         new-posY (+ posY (* BALL-SPEED dirY))]
     (-> state
-        (assoc-in [:ball :pos :x] new-posX)
-        (assoc-in [:ball :pos :y] new-posY)
-        (assoc-in [:ball :dir :y] (if (and (< 0 new-posY) (> SCREEN-HEIGHT new-posY))
-                                    dirY
-                                    (* -1 dirY)))
-        (assoc-in [:ball :dir :x] (if (collide-with-paddles? (-> state :ball) (-> state :paddle1) (-> state :paddle2))
-                                    (* -1 dirX)
-                                    dirX)))))
+        (assoc-in [:ball :posX] new-posX)
+        (assoc-in [:ball :posY] new-posY)
+        (assoc-in [:ball :dirY] (if (and (< 0 new-posY) (> SCREEN-HEIGHT new-posY))
+                                  dirY
+                                  (* -1 dirY)))
+        (assoc-in [:ball :dirX] (if (collide-with-paddles? (-> state :ball) (-> state :paddle1) (-> state :paddle2))
+                                  (* -1 dirX)
+                                  dirX)))))
 
 (defn update-game [state]
   (swap! game-state #(-> state
